@@ -1,7 +1,5 @@
 # ANTMAN Coaching (static host)
 
-Public production build of the ANTMAN coaching PWA for free GitHub Pages hosting.
+Public production build for GitHub Pages: https://antmanfitness.github.io/antman-coaching-web/
 
-Source (private): https://github.com/antmanfitness/antman-coaching
-
-Do not put service-role secrets here. Only the built frontend (anon/publishable Supabase key is expected in the JS bundle).
+Private source: https://github.com/antmanfitness/antman-coaching
