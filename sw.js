@@ -62,8 +62,8 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let data = {}
   try { data = event.data ? event.data.json() : {} } catch { data = { body: event.data?.text() || '' } }
-  const title = data.title || 'ANTMAN reminder'
-  const options = { body: data.body || 'Your coaching reminder is ready.', icon: '/icon-192.png', badge: '/icon-192.png', data: { url: data.url || '/' } }
+  const title = data.title || 'New message'
+  const options = { body: data.body || 'Your coaching reminder is ready.', icon: './icon-192.png', badge: './icon-192.png', data: { url: data.url || '/' } }
   event.waitUntil(self.registration.showNotification(title, options))
 })
 
