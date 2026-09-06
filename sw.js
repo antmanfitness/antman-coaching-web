@@ -1,4 +1,4 @@
-const CACHE = 'antman-client-hub-v1'
+const CACHE = 'antman-client-hub-v2'
 const BASE = new URL('./', self.registration.scope).pathname
 const INDEX = new URL('./index.html', self.registration.scope).pathname
 const PRECACHE = [
