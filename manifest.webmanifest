@@ -1,13 +1,13 @@
 {
-  "name": "Coaching",
-  "short_name": "Coaching",
-  "description": "Training and nutrition coaching.",
+  "name": "Client Hub",
+  "short_name": "Client Hub",
+  "description": "ANTMAN training and nutrition coaching.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#070808",
-  "theme_color": "#070808",
+  "background_color": "#030404",
+  "theme_color": "#030404",
   "icons": [
     {
       "src": "./icon-192.png",
