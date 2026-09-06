@@ -1,11 +1,13 @@
-const CACHE = 'antman-v1'
+const CACHE = 'antman-arena-v2'
+const BASE = new URL('./', self.registration.scope).pathname
+const INDEX = new URL('./index.html', self.registration.scope).pathname
 const PRECACHE = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
+  BASE,
+  INDEX,
+  new URL('./manifest.webmanifest', self.registration.scope).pathname,
+  new URL('./icon-192.png', self.registration.scope).pathname,
+  new URL('./icon-512.png', self.registration.scope).pathname,
+  new URL('./apple-touch-icon.png', self.registration.scope).pathname,
 ]
 
 self.addEventListener('install', (event) => {
@@ -37,10 +39,25 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone()
-          caches.open(CACHE).then((cache) => cache.put('/index.html', copy))
+          caches.open(CACHE).then((cache) => cache.put(INDEX, copy))
           return res
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(() => caches.match(INDEX)),
+    )
+    return
+  }
+
+  if (url.pathname.includes('/assets/')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone()
+            caches.open(CACHE).then((cache) => cache.put(req, copy))
+          }
+          return res
+        })
+        .catch(() => caches.match(req)),
     )
     return
   }
@@ -63,13 +80,13 @@ self.addEventListener('push', (event) => {
   let data = {}
   try { data = event.data ? event.data.json() : {} } catch { data = { body: event.data?.text() || '' } }
   const title = data.title || 'New message'
-  const options = { body: data.body || 'Your coaching reminder is ready.', icon: './icon-192.png', badge: './icon-192.png', data: { url: data.url || '/' } }
+  const options = { body: data.body || 'Your coaching reminder is ready.', icon: './icon-192.png', badge: './icon-192.png', data: { url: data.url || BASE } }
   event.waitUntil(self.registration.showNotification(title, options))
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = event.notification.data?.url || '/'
+  const target = event.notification.data?.url || BASE
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
     const existing = clients.find((client) => 'focus' in client)
     if (existing) return existing.focus()
