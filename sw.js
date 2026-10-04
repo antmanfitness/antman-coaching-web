@@ -1,4 +1,4 @@
-const CACHE = 'antman-spacing-v37'
+const CACHE = 'antman-spacing-v38'
 const BASE = new URL('./', self.registration.scope).pathname
 const INDEX = new URL('./index.html', self.registration.scope).pathname
 const PRECACHE = [
