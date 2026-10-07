@@ -13,7 +13,31 @@
     <link rel="apple-touch-icon" href="/antman-coaching-web/apple-touch-icon.png" />
     <link rel="manifest" href="/antman-coaching-web/manifest.webmanifest" />
     <title>Client Hub</title>
-    <script type="module" crossorigin src="/antman-coaching-web/assets/index-BGWv6vgs.js"></script>
+    <script>
+      // Bust a stuck home-screen install: if this HTML is newer than the last
+      // version we ran, wipe service workers + caches once, then reload.
+      (function () {
+        var BUILT = '56'
+        if (!BUILT || BUILT.indexOf('__') === 0) return
+        var KEY = 'antman-app-v'
+        try {
+          var last = localStorage.getItem(KEY)
+          if (last === BUILT) return
+          localStorage.setItem(KEY, BUILT)
+          if (!last) return // first run of this device on any build — no wipe needed
+          var done = function () {
+            var u = new URL(location.href)
+            u.searchParams.set('_fresh', String(Date.now()))
+            location.replace(u.pathname + u.search + u.hash)
+          }
+          var tasks = []
+          if ('serviceWorker' in navigator) tasks.push(navigator.serviceWorker.getRegistrations().then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister() })) }))
+          if (window.caches) tasks.push(caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k) })) }))
+          Promise.all(tasks).then(done).catch(done)
+        } catch (e) {}
+      })()
+    </script>
+    <script type="module" crossorigin src="/antman-coaching-web/assets/index-BMpGcZlv.js"></script>
     <link rel="modulepreload" crossorigin href="/antman-coaching-web/assets/rolldown-runtime-Dd_uD5pT.js">
     <link rel="stylesheet" crossorigin href="/antman-coaching-web/assets/index-BzCjLuTk.css">
   </head>

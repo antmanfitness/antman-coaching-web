@@ -1,4 +1,4 @@
-const CACHE = 'antman-spacing-v54'
+const CACHE = 'antman-spacing-v56'
 const BASE = new URL('./', self.registration.scope).pathname
 const INDEX = new URL('./index.html', self.registration.scope).pathname
 const PRECACHE = [
@@ -54,7 +54,7 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.includes('/assets/')) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'reload' })
         .then((res) => {
           if (res.ok) {
             const copy = res.clone()
@@ -83,6 +83,9 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data === 'skip-waiting') self.skipWaiting()
+  if (event.data === 'purge-all') {
+    event.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).then(() => self.skipWaiting()))
+  }
 })
 
 self.addEventListener('push', (event) => {
