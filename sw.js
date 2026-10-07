@@ -1,4 +1,4 @@
-const CACHE = 'antman-spacing-v53'
+const CACHE = 'antman-spacing-v54'
 const BASE = new URL('./', self.registration.scope).pathname
 const INDEX = new URL('./index.html', self.registration.scope).pathname
 const PRECACHE = [
@@ -14,7 +14,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
+      .then((cache) => cache.addAll(PRECACHE.map((u) => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting()),
   )
 })
@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
 
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           const copy = res.clone()
           caches.open(CACHE).then((cache) => cache.put(INDEX, copy))
@@ -44,6 +44,11 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => caches.match(INDEX)),
     )
+    return
+  }
+
+  if (url.pathname.endsWith('/version.json')) {
+    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })))
     return
   }
 
@@ -74,6 +79,10 @@ self.addEventListener('fetch', (event) => {
       })
     }),
   )
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'skip-waiting') self.skipWaiting()
 })
 
 self.addEventListener('push', (event) => {
