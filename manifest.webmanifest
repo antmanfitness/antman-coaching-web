@@ -1,7 +1,7 @@
 {
-  "name": "Client Hub",
-  "short_name": "Client Hub",
-  "description": "ANTMAN training and nutrition coaching.",
+  "name": "Set Orbit",
+  "short_name": "Set Orbit",
+  "description": "Set Orbit — training and nutrition coaching with ANTMANFITNESS.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -22,7 +22,7 @@
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

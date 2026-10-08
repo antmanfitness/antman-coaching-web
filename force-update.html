@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="no" />
-  <title>Updating Client Hub…</title>
+  <title>Updating Set Orbit…</title>
   <style>
     body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #030404; color: #f5f5f5; font-family: -apple-system, system-ui, sans-serif; padding: 24px; text-align: center; }
     p { color: #a0a0a0; line-height: 1.4; }
@@ -13,7 +13,7 @@
 </head>
 <body>
   <div>
-    <h1>Updating Client Hub…</h1>
+    <h1>Updating Set Orbit…</h1>
     <p id="msg">Clearing the old saved copy so your home-screen app can load the new one.</p>
   </div>
   <script>
@@ -29,12 +29,12 @@
           await Promise.all(keys.map(function (k) { return caches.delete(k) }))
         }
         try { localStorage.removeItem('antman-app-v') } catch (e) {}
-        msg.innerHTML = 'Done. <b>Fully close</b> the home-screen Client Hub (swipe it away), then open it again.'
+        msg.innerHTML = 'Done. <b>Fully close</b> the home-screen Set Orbit app (swipe it away), then open it again.'
         setTimeout(function () {
           location.replace('./?_fresh=' + Date.now())
         }, 1800)
       } catch (e) {
-        msg.textContent = 'Could not clear automatically. In Safari: Settings → Safari → Advanced → Website Data → remove antmanfitness.github.io, then reopen Client Hub.'
+        msg.textContent = 'Could not clear automatically. In Safari: Settings → Safari → Advanced → Website Data → remove antmanfitness.github.io, then reopen Set Orbit.'
       }
     })()
   </script>

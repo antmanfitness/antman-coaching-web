@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Client Hub" />
-    <meta name="description" content="ANTMAN coaching — train and eat." />
+    <meta name="apple-mobile-web-app-title" content="Set Orbit" />
+    <meta name="description" content="Set Orbit — training and nutrition coaching with ANTMANFITNESS." />
     <link rel="icon" type="image/png" href="/antman-coaching-web/favicon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/antman-coaching-web/icon-192.png" />
     <link rel="apple-touch-icon" href="/antman-coaching-web/apple-touch-icon.png" />
     <link rel="manifest" href="/antman-coaching-web/manifest.webmanifest" />
-    <!-- Home-screen launch images (black + logo) so iOS never flashes white on open. -->
+    <!-- Home-screen launch images (black + white Set Orbit mark) so iOS never flashes white on open. -->
     <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-750x1334.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-828x1792.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-1125x2436.png" />
@@ -24,7 +24,7 @@
     <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-1290x2796.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-1320x2868.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/antman-coaching-web/splash/launch-1242x2208.png" />
-    <title>Client Hub</title>
+    <title>Set Orbit</title>
     <style>
       /* Cold-launch splash (shown by the inline script below; React fades it out when ready). */
       html.bs-on, html.bs-on body { background: #000; }
@@ -33,23 +33,24 @@
       #boot-splash .bs-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
       #boot-splash.burst { pointer-events: none; }
       #boot-splash.burst .bs-bg { opacity: 0; transform: scale(1.08); }
-      #boot-splash.burst img { opacity: 0 !important; transform: scale(1.12) !important; transition: opacity 0.14s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); animation: none; }
+      #boot-splash.burst .bs-mark img { opacity: 0 !important; transform: scale(1.12) !important; transition: opacity 0.14s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); animation: none; }
       #boot-splash.burst .bs-word, #boot-splash.burst .bs-mark::before { opacity: 0 !important; transition: opacity 0.18s ease; animation: none; }
       html.bs-reveal .screen { animation: bs-reveal 0.6s cubic-bezier(0.32, 0.72, 0, 1) both; }
       @keyframes bs-reveal { from { opacity: 0; transform: scale(0.965); } to { opacity: 1; transform: none; } }
       #boot-splash.show { display: grid; }
       #boot-splash.out { opacity: 0; pointer-events: none; }
-      #boot-splash .bs-stack { position: relative; display: grid; justify-items: center; gap: 18px; transform: translateY(-2%); }
-      #boot-splash .bs-mark { position: relative; width: 136px; height: 136px; }
+      #boot-splash .bs-stack { position: relative; display: grid; justify-items: center; gap: 14px; transform: translateY(-2%); }
+      #boot-splash .bs-mark { position: relative; width: 150px; height: 150px; }
       #boot-splash .bs-mark::before { content: ''; position: absolute; inset: -34px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 67, 56, 0.5), rgba(255, 67, 56, 0) 68%); filter: blur(8px); opacity: 0; animation: bs-glow 1.2s ease-out 0.1s forwards; }
-      #boot-splash img { position: relative; width: 100%; height: 100%; border-radius: 50%; opacity: 0; transform: scale(0.9); animation: bs-in 0.62s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-      #boot-splash .bs-word { font: 600 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(235, 235, 245, 0.55); opacity: 0; animation: bs-word 0.6s ease-out 0.22s forwards; }
+      #boot-splash .bs-mark img { position: relative; display: block; width: 100%; height: 100%; opacity: 0; transform: scale(0.9); animation: bs-in 0.62s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+      #boot-splash .bs-word { line-height: 0; opacity: 0; animation: bs-word 0.6s ease-out 0.22s forwards; }
+      #boot-splash .bs-word img { display: block; width: 132px; height: auto; opacity: 0.92; }
       #boot-splash.out .bs-stack { transform: translateY(-2%) scale(1.04); transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1); }
       @keyframes bs-in { to { opacity: 1; transform: scale(1); } }
       @keyframes bs-glow { 0% { opacity: 0; transform: scale(0.8); } 60% { opacity: 1; } 100% { opacity: 0.75; transform: scale(1); } }
       @keyframes bs-word { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) {
-        #boot-splash img, #boot-splash .bs-word { animation: none; opacity: 1; transform: none; }
+        #boot-splash .bs-mark img, #boot-splash .bs-word { animation: none; opacity: 1; transform: none; }
         #boot-splash .bs-mark::before { animation: none; opacity: 0.6; }
         #boot-splash, #boot-splash.out .bs-stack { transition: opacity 0.2s linear; transform: none; }
       }
@@ -58,7 +59,7 @@
       // Bust a stuck home-screen install: if this HTML is newer than the last
       // version we ran, wipe service workers + caches once, then reload.
       (function () {
-        var BUILT = '92'
+        var BUILT = '93'
         if (!BUILT || BUILT.indexOf('__') === 0) return
         var KEY = 'antman-app-v'
         try {
@@ -79,12 +80,12 @@
         } catch (e) {}
       })()
     </script>
-    <script type="module" crossorigin src="/antman-coaching-web/assets/index-CiUSo8CV.js"></script>
+    <script type="module" crossorigin src="/antman-coaching-web/assets/index-BldoUvWM.js"></script>
     <link rel="modulepreload" crossorigin href="/antman-coaching-web/assets/rolldown-runtime-Dd_uD5pT.js">
-    <link rel="stylesheet" crossorigin href="/antman-coaching-web/assets/index-yCDUem5F.css">
+    <link rel="stylesheet" crossorigin href="/antman-coaching-web/assets/index-CA5dENrv.css">
   </head>
   <body>
-    <div id="boot-splash" aria-hidden="true"><div class="bs-bg"></div><div class="bs-stack"><div class="bs-mark"><img src="/antman-coaching-web/splash/logo-mark.png" alt="" width="136" height="136" /></div><div class="bs-word">Client Hub</div></div></div>
+    <div id="boot-splash" aria-hidden="true"><div class="bs-bg"></div><div class="bs-stack"><div class="bs-mark"><img src="/antman-coaching-web/brand/setorbit-mark-white.png" alt="" width="150" height="150" /></div><div class="bs-word"><img src="/antman-coaching-web/brand/setorbit-wordmark-white.png" alt="Set Orbit" width="132" height="22" /></div></div></div>
     <script>
       // App-open splash: plays on every fresh page load (incl. the reload after an update) and when the app
       // comes back to the foreground after 30+ min away. Skipped only in the iOS app (native splash), with
