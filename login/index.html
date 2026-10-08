@@ -58,7 +58,7 @@
       // Bust a stuck home-screen install: if this HTML is newer than the last
       // version we ran, wipe service workers + caches once, then reload.
       (function () {
-        var BUILT = '90'
+        var BUILT = '91'
         if (!BUILT || BUILT.indexOf('__') === 0) return
         var KEY = 'antman-app-v'
         try {
@@ -66,6 +66,7 @@
           if (last === BUILT) return
           localStorage.setItem(KEY, BUILT)
           if (!last) return // first run of this device on any build — no wipe needed
+          window.__bsReloading = true // this page is replaced in a moment; the reloaded page plays the splash
           var done = function () {
             var u = new URL(location.href)
             u.searchParams.set('_fresh', String(Date.now()))
@@ -78,28 +79,33 @@
         } catch (e) {}
       })()
     </script>
-    <script type="module" crossorigin src="/antman-coaching-web/assets/index-B425Bnad.js"></script>
+    <script type="module" crossorigin src="/antman-coaching-web/assets/index-RPNDOYje.js"></script>
     <link rel="modulepreload" crossorigin href="/antman-coaching-web/assets/rolldown-runtime-Dd_uD5pT.js">
     <link rel="stylesheet" crossorigin href="/antman-coaching-web/assets/index-DK4aAqwb.css">
   </head>
   <body>
     <div id="boot-splash" aria-hidden="true"><div class="bs-bg"></div><div class="bs-stack"><div class="bs-mark"><img src="/antman-coaching-web/splash/logo-mark.png" alt="" width="136" height="136" /></div><div class="bs-word">Client Hub</div></div></div>
     <script>
-      // Cold launch only: skip if the app was in use < 3 min ago (resume/reload), on the version-bust reload, and in the iOS app (native splash).
+      // App-open splash: plays on every fresh page load (incl. the reload after an update) and when the app
+      // comes back to the foreground after 30+ min away. Skipped only in the iOS app (native splash), with
+      // ?nosplash, and on the instant version-bust page that is about to reload (so it never plays twice).
       (function () {
         var el = document.getElementById('boot-splash'); if (!el) return
-        var KEY = 'antman-last-active', now = Date.now(), last = 0
-        try { last = Number(localStorage.getItem(KEY)) || 0 } catch (e) {}
-        var mark = function () { try { localStorage.setItem(KEY, String(Date.now())) } catch (e) {} }
-        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') mark() })
-        window.addEventListener('pagehide', mark)
+        var html = document.documentElement
+        // Drop the cache-buster from the address bar so it never sticks around.
+        try { if (/[?&]_fresh=/.test(location.search)) { var cu = new URL(location.href); cu.searchParams.delete('_fresh'); history.replaceState(history.state, '', cu.pathname + cu.search + cu.hash) } } catch (e) {}
         var native = /^capacitor:/.test(location.protocol) || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
-        var skip = native || /[?&]_fresh=/.test(location.search) || /[?&]nosplash/.test(location.search) || (last && now - last < 180000)
-        if (skip && !/[?&]splash=1/.test(location.search)) { el.parentNode.removeChild(el); return }
-        document.documentElement.classList.add('bs-on'); el.classList.add('show')
-        var gone = false
         var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        var finish = function () { document.documentElement.classList.remove('bs-on'); if (el.parentNode) el.parentNode.removeChild(el); setTimeout(function () { document.documentElement.classList.remove('bs-reveal') }, 700) }
+        var AWAY = 30 * 60 * 1000
+        var shownAt = 0, active = false, closing = false, raf = 0, timers = []
+        var later = function (fn, ms) { timers.push(setTimeout(fn, ms)) }
+        var finish = function () {
+          active = false; closing = false
+          if (raf) cancelAnimationFrame(raf); raf = 0
+          el.classList.remove('show', 'burst', 'out'); html.classList.remove('bs-on')
+          var cv = el.querySelector('canvas'); if (cv) cv.parentNode.removeChild(cv)
+          setTimeout(function () { html.classList.remove('bs-reveal') }, 700)
+        }
         // Exit: the logo bursts into red/white sparkles (canvas, ~0.6 s) while the app fades/scales in underneath.
         var burst = function () {
           var img = el.querySelector('img'), r = img.getBoundingClientRect()
@@ -119,7 +125,7 @@
             P.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20, s: 1.2 + Math.random() * 2.4, c: col, star: Math.random() < 0.28 })
           }
           el.classList.add('burst')
-          document.documentElement.classList.remove('bs-on'); document.documentElement.classList.add('bs-reveal')
+          html.classList.remove('bs-on'); html.classList.add('bs-reveal')
           var T = 640, t0 = performance.now()
           var frame = function (now) {
             var p = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - p, 3), alpha = Math.pow(1 - p, 1.3)
@@ -130,20 +136,42 @@
               if (q.star) { g.fillRect(X - S * 2.2, Y - S * 0.35, S * 4.4, S * 0.7); g.fillRect(X - S * 0.35, Y - S * 2.2, S * 0.7, S * 4.4) }
               else { g.beginPath(); g.arc(X, Y, S, 0, 6.2832); g.fill() }
             }
-            if (p < 1) requestAnimationFrame(frame); else finish()
+            if (p < 1) raf = requestAnimationFrame(frame); else finish()
           }
-          requestAnimationFrame(frame)
+          raf = requestAnimationFrame(frame)
         }
-        var gone = false
-        window.__hideBootSplash = function () {
-          if (gone) return; gone = true
-          var wait = Math.max(0, 800 - (Date.now() - now)) // minimum ~0.8 s so it never just flickers
-          setTimeout(function () {
-            if (reduce) { el.classList.add('out'); setTimeout(finish, 420); return } // reduced motion: plain fade
-            try { burst() } catch (e) { el.classList.add('out'); setTimeout(finish, 420) }
+        var hide = function () {
+          if (!active || closing) return; closing = true
+          var wait = Math.max(0, 800 - (Date.now() - shownAt)) // minimum ~0.8 s so it never just flickers
+          later(function () {
+            if (!active) return
+            if (reduce) { el.classList.add('out'); later(finish, 420); return } // reduced motion: plain fade
+            try { burst() } catch (e) { el.classList.add('out'); later(finish, 420) }
           }, wait)
         }
-        setTimeout(window.__hideBootSplash, 2000) // hard cap: never hold the app longer than ~2 s
+        /** Play the splash. auto = the app is already loaded, so it exits on its own after the minimum. */
+        var show = function (auto) {
+          for (var t = 0; t < timers.length; t++) clearTimeout(timers[t]); timers = []
+          if (raf) cancelAnimationFrame(raf); raf = 0
+          var cv = el.querySelector('canvas'); if (cv) cv.parentNode.removeChild(cv)
+          el.classList.remove('show', 'burst', 'out'); void el.offsetWidth // restart the intro animations
+          active = true; closing = false; shownAt = Date.now()
+          html.classList.remove('bs-reveal'); html.classList.add('bs-on'); el.classList.add('show')
+          if (auto) later(hide, 1150)
+          later(hide, 2000) // hard cap: never hold the app longer than ~2 s
+        }
+        window.__hideBootSplash = hide
+        window.__showBootSplash = function () { show(true) }
+        // Back in the foreground after 30+ min away (iOS keeps home-screen apps alive, so this is the usual "open").
+        var hiddenAt = 0
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return }
+          if (!native && hiddenAt && Date.now() - hiddenAt >= AWAY) show(true)
+          hiddenAt = 0
+        })
+        window.addEventListener('pageshow', function (e) { if (e.persisted && !native && hiddenAt && Date.now() - hiddenAt >= AWAY) { hiddenAt = 0; show(true) } })
+        var skip = native || window.__bsReloading || /[?&]nosplash/.test(location.search)
+        if (!skip) show(false)
       })()
     </script>
     <div id="root"></div>
