@@ -59,7 +59,7 @@
       // Bust a stuck home-screen install: if this HTML is newer than the last
       // version we ran, wipe service workers + caches once, then reload.
       (function () {
-        var BUILT = '138'
+        var BUILT = '139'
         if (!BUILT || BUILT.indexOf('__') === 0) return
         var KEY = 'antman-app-v'
         try {
@@ -80,11 +80,39 @@
         } catch (e) {}
       })()
     </script>
-    <script type="module" crossorigin src="/antman-coaching-web/assets/index-D4rvh4V4.js"></script>
+    <style>
+      /* v139: portrait only. Phones in landscape get a full-screen "rotate" card; the app underneath is hidden.
+         CSS-first so it works on the splash and login before JS boots. Only short (≤500px tall) touch screens that are
+         clearly wider than tall match, so desktop, tablets and a portrait phone with the keyboard open never do. */
+      #rotate-lock { display: none; }
+      @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) and (min-aspect-ratio: 13/10) {
+        html, body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none; }
+        body > *:not(#rotate-lock) { visibility: hidden !important; pointer-events: none !important; }
+        #rotate-lock { position: fixed; inset: 0; z-index: 2147483600; display: grid; place-items: center; padding: 16px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); box-sizing: border-box; overflow: hidden; background: radial-gradient(60% 60% at 50% 45%, rgba(47, 128, 255, 0.18), transparent 70%), #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; visibility: visible !important; }
+        html[data-theme='light'] #rotate-lock { background: radial-gradient(60% 60% at 50% 45%, rgba(47, 128, 255, 0.14), transparent 70%), #f5f7fb; color: #0b1220; }
+        #rotate-lock .rl-stack { display: grid; justify-items: center; gap: 10px; max-width: 420px; }
+        #rotate-lock .rl-logo { width: 54px; height: 54px; }
+        #rotate-lock .rl-logo.dark { display: none; }
+        html[data-theme='light'] #rotate-lock .rl-logo.light { display: none; }
+        html[data-theme='light'] #rotate-lock .rl-logo.dark { display: block; }
+        #rotate-lock svg { width: 64px; height: 64px; color: #2f80ff; animation: rl-turn 2.4s ease-in-out infinite; }
+        #rotate-lock b { font-size: 20px; line-height: 1.25; }
+        #rotate-lock p { margin: 0; font-size: 14px; opacity: 0.72; }
+      }
+      @keyframes rl-turn { 0%, 20% { transform: rotate(90deg); } 55%, 100% { transform: rotate(0deg); } }
+      @media (prefers-reduced-motion: reduce) { #rotate-lock svg { animation: none; } }
+      html.reduce-motion #rotate-lock svg { animation: none; }
+    </style>
+    <script type="module" crossorigin src="/antman-coaching-web/assets/index-CdV16XwD.js"></script>
     <link rel="modulepreload" crossorigin href="/antman-coaching-web/assets/rolldown-runtime-Dd_uD5pT.js">
     <link rel="stylesheet" crossorigin href="/antman-coaching-web/assets/index-DW7bi3g3.css">
   </head>
   <body>
+    <div id="rotate-lock" role="alert" aria-live="polite"><div class="rl-stack"><img class="rl-logo light" src="/antman-coaching-web/brand/setorbit-mark-white-160.png" alt="Set Orbit" width="54" height="54" /><img class="rl-logo dark" src="/antman-coaching-web/brand/setorbit-mark-black-160.png" alt="Set Orbit" width="54" height="54" /><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2" /><path d="M11 18.5h2" /></svg><b>Rotate your phone to portrait</b><p>Set Orbit works best upright.</p></div></div>
+    <script>
+      // v139: lock to portrait where the browser allows it (installed Android PWAs). Never throws.
+      (function () { try { var o = screen.orientation; if (o && typeof o.lock === 'function') { var r = o.lock('portrait'); if (r && typeof r.catch === 'function') r.catch(function () {}) } } catch (e) {} })()
+    </script>
     <div id="boot-splash" aria-hidden="true"><div class="bs-bg"></div><div class="bs-stack"><div class="bs-mark"><img src="/antman-coaching-web/brand/setorbit-mark-white.png" alt="" width="150" height="150" /></div><div class="bs-word"><img src="/antman-coaching-web/brand/setorbit-wordmark-white.png" alt="Set Orbit" width="132" height="22" /></div></div></div>
     <script>
       // App-open splash: plays on every fresh page load (incl. the reload after an update) and when the app
