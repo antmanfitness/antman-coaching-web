@@ -1,5 +1,5 @@
-// Set Orbit — "My Glance" Home Screen widget for the free Scriptable app (iOS).
-// Shows the tiles you picked in Set Orbit (Today tab → My Glance → "Edit my box"). Small and medium (and large) widgets.
+// Set Orbit — "My Glance" Home Screen widget for the free Scriptable app (iOS / iPadOS).  v155
+// Shows the tiles you picked in Set Orbit (Today tab → My Glance → "Edit my box"). Small, medium and large widgets.
 //
 // SETUP (3 steps — full instructions in Set Orbit → Settings → Home Screen widget):
 //   1. Install the free "Scriptable" app from the App Store.
@@ -11,6 +11,7 @@
 // The token can read just the tile values you picked, for your account only. Revoke it any time in Settings → Home Screen widget.
 // The key below is Set Orbit's public (anon) API key; it cannot read anything by itself.
 //
+// If tiles ever look washed out, check Home Screen → Customize → Widgets: iOS's Tinted / Clear styles recolor every widget.
 // Honest limits: iOS decides when a widget refreshes (roughly every 5–15 minutes, sometimes less often). Tapping a tile
 // opens that screen in Set Orbit (small widgets have one tap target: they open Today).
 
@@ -23,21 +24,27 @@ let TOKEN = "PASTE_YOUR_TOKEN_HERE"
 const param = typeof args.widgetParameter === "string" ? args.widgetParameter.trim() : ""
 if (param.indexOf("sow_") === 0) TOKEN = param
 
+// Cards are outlined (not filled) by default: iOS's Tinted / Clear Home Screen styles can paint solid fills white, which hid
+// the text in v153. Set FILLED_CARDS = true only if you use the normal (non-tinted) style and like filled cards.
+const FILLED_CARDS = false
+
 const CACHE_FILE = "setorbit-glance-cache.json"
 const REFRESH_MINUTES = 15
 
-const COLORS = {
-  bg: new Color("#0d0d12"),
-  card: new Color("#1c1c24"),
+// Always-dark design with fixed colors (no dynamic/appearance colors), so text never ends up white-on-white.
+const C = {
+  bg: new Color("#0a1022"),
+  card: new Color("#ffffff", 0.1),
+  outline: new Color("#ffffff", 0.2),
   text: new Color("#ffffff"),
-  dim: new Color("#9a9aa8"),
-  done: new Color("#34c759"),
-  warn: new Color("#ff453a"),
-  todo: new Color("#ffb340"),
-  na: new Color("#6e6e7a"),
-  accent: new Color("#5aa0ff"),
+  label: new Color("#aab4cf"),
+  faint: new Color("#7f8aa8"),
+  accent: new Color("#4d8dff"),
+  done: new Color("#4ade80"),
+  warn: new Color("#ff6b6b"),
+  todo: new Color("#fbbf24"),
 }
-const stateColor = (s) => (s === "done" ? COLORS.done : s === "warn" ? COLORS.warn : s === "todo" ? COLORS.todo : s === "na" ? COLORS.na : COLORS.text)
+const valueColor = (s) => (s === "done" ? C.done : s === "warn" ? C.warn : s === "todo" ? C.todo : s === "na" ? C.faint : C.text)
 
 function cachePath() {
   const fm = FileManager.local()
@@ -87,32 +94,52 @@ function clock(ms) {
   return h + ":" + (m < 10 ? "0" : "") + m + " " + ap
 }
 
-function tileCell(parent, tile, compact) {
+// Never blank: unavailable values show a dash plus a plain reason.
+function normalize(tile) {
+  const id = String(tile.id || "")
+  let value = tile.value == null || String(tile.value).trim() === "" ? "—" : String(tile.value)
+  let sub = tile.sub == null ? "" : String(tile.sub)
+  let state = tile.state || "info"
+  if (value === "—") {
+    state = "na"
+    if (id === "oura") sub = "Connect Oura"
+    else if (id === "whoop") sub = "Connect WHOOP"
+    else if (!sub || sub === "no data yet") sub = "No data"
+  }
+  return { id: id, label: String(tile.label || "—"), value: value, sub: sub, state: state, path: tile.path }
+}
+
+// One line of text that stretches the card to the full width of its grid slot (works at iPhone and iPad widget sizes).
+function line(parent, str, font, color, opts) {
+  const row = parent.addStack()
+  row.layoutHorizontally()
+  const t = row.addText(str)
+  t.font = font
+  t.textColor = color
+  t.lineLimit = 1
+  t.minimumScaleFactor = opts && opts.scale ? opts.scale : 0.7
+  row.addSpacer()
+  return t
+}
+
+function tileCell(parent, raw, sz) {
+  const tile = normalize(raw)
   const cell = parent.addStack()
   cell.layoutVertically()
-  cell.backgroundColor = COLORS.card
-  cell.cornerRadius = 12
-  cell.setPadding(compact ? 6 : 8, compact ? 8 : 10, compact ? 6 : 8, compact ? 8 : 10)
+  if (FILLED_CARDS) cell.backgroundColor = C.card
+  else { cell.borderColor = C.outline; cell.borderWidth = 1 }
+  cell.cornerRadius = 14
+  cell.setPadding(sz.padV, sz.padH, sz.padV, sz.padH)
+  cell.spacing = 1
   cell.url = APP_URL + (tile.path && tile.path.charAt(0) === "/" ? tile.path : "/today")
-  const label = cell.addText(String(tile.label || ""))
-  label.font = Font.mediumSystemFont(compact ? 10 : 11)
-  label.textColor = COLORS.dim
-  label.lineLimit = 1
-  const value = cell.addText(String(tile.value == null ? "—" : tile.value))
-  value.font = Font.boldSystemFont(compact ? 17 : 20)
-  value.textColor = stateColor(tile.state)
-  value.lineLimit = 1
-  value.minimumScaleFactor = 0.6
-  const sub = cell.addText(String(tile.sub || " "))
-  sub.font = Font.systemFont(compact ? 9 : 10)
-  sub.textColor = COLORS.dim
-  sub.lineLimit = 1
-  sub.minimumScaleFactor = 0.7
+  line(cell, tile.label, Font.mediumSystemFont(sz.label), C.label)
+  line(cell, tile.value, Font.boldSystemFont(sz.value), valueColor(tile.state), { scale: 0.5 })
+  line(cell, tile.sub || " ", Font.systemFont(sz.sub), C.faint)
   return cell
 }
 
-// Lays tiles out in rows of `cols`.
-function grid(widget, tiles, cols, compact) {
+// Lays tiles out in rows of `cols`. Short last rows are padded with empty slots so every card is the same width.
+function grid(widget, tiles, cols, sz) {
   const rows = Math.ceil(tiles.length / cols)
   for (let r = 0; r < rows; r++) {
     const row = widget.addStack()
@@ -120,34 +147,70 @@ function grid(widget, tiles, cols, compact) {
     row.spacing = 6
     for (let c = 0; c < cols; c++) {
       const t = tiles[r * cols + c]
-      if (t) tileCell(row, t, compact)
-      else row.addSpacer()
+      if (t) tileCell(row, t, sz)
+      else {
+        const empty = row.addStack()
+        empty.layoutVertically()
+        empty.addSpacer()
+      }
     }
     if (r < rows - 1) widget.addSpacer(6)
   }
 }
 
 function message(widget, title, body) {
+  widget.addSpacer()
   const t = widget.addText(title)
-  t.font = Font.boldSystemFont(14)
-  t.textColor = COLORS.text
+  t.font = Font.boldSystemFont(15)
+  t.textColor = C.text
   widget.addSpacer(4)
   const b = widget.addText(body)
-  b.font = Font.systemFont(11)
-  b.textColor = COLORS.dim
+  b.font = Font.systemFont(12)
+  b.textColor = C.label
+  widget.addSpacer()
   widget.url = APP_URL + "/settings"
 }
 
-function build(family, result, cached) {
-  const widget = new ListWidget()
-  widget.backgroundColor = COLORS.bg
-  widget.setPadding(10, 10, 8, 10)
-  widget.refreshAfterDate = new Date(Date.now() + REFRESH_MINUTES * 60 * 1000)
-  widget.url = APP_URL + "/today"
+function header(widget, small, stamp, stale) {
+  const head = widget.addStack()
+  head.layoutHorizontally()
+  head.centerAlignContent()
+  const title = head.addText("Set Orbit")
+  title.font = Font.boldSystemFont(small ? 11 : 13)
+  title.textColor = C.accent
+  head.addSpacer()
+  const when = head.addText((stale ? "offline · " : "") + clock(stamp))
+  when.font = Font.systemFont(small ? 8 : 9)
+  when.textColor = stale ? C.todo : C.faint
+  widget.addSpacer(small ? 5 : 6)
+}
 
+function buildLock(family, snapshot) {
+  const widget = new ListWidget()
+  const tiles = (snapshot ? snapshot.tiles : []).map(normalize).slice(0, family === "accessoryRectangular" ? 3 : 1)
+  if (!tiles.length) { const t = widget.addText("Set Orbit"); t.textColor = C.text; return widget }
+  for (const t of tiles) {
+    const x = widget.addText(t.label + "  " + t.value)
+    x.font = Font.mediumSystemFont(12)
+    x.textColor = C.text
+    x.lineLimit = 1
+    x.minimumScaleFactor = 0.6
+  }
+  widget.url = APP_URL + "/today"
+  return widget
+}
+
+function build(family, result, cached) {
   let snapshot = result.snapshot
   let stale = false
   if (!snapshot && cached && cached.snapshot && result.error !== "invalid_token" && result.error !== "no_token") { snapshot = cached.snapshot; stale = true }
+  if (family.indexOf("accessory") === 0) return buildLock(family, snapshot)
+
+  const widget = new ListWidget()
+  widget.backgroundColor = C.bg
+  widget.setPadding(10, 12, 8, 12)
+  widget.refreshAfterDate = new Date(Date.now() + REFRESH_MINUTES * 60 * 1000)
+  widget.url = APP_URL + "/today"
 
   if (!snapshot) {
     if (result.error === "no_token") message(widget, "Set Orbit", "Add your widget token: Set Orbit → Settings → Home Screen widget.")
@@ -157,27 +220,18 @@ function build(family, result, cached) {
     return widget
   }
 
-  const tiles = snapshot.tiles.slice(0, 6)
-  const small = family === "small" || family === "accessoryRectangular" || family === "accessoryCircular" || family === "accessoryInline"
+  const small = family === "small"
   const large = family === "large" || family === "extraLarge"
+  const tiles = snapshot.tiles.slice(0, 6)
+  header(widget, small, cached && stale ? cached.at : Date.now(), stale)
+  if (!tiles.length) { message(widget, "No tiles yet", "In Set Orbit open Today → My Glance → Edit my box."); return widget }
 
-  const head = widget.addStack()
-  head.layoutHorizontally()
-  head.centerAlignContent()
-  const title = head.addText("Set Orbit")
-  title.font = Font.boldSystemFont(small ? 11 : 12)
-  title.textColor = COLORS.accent
-  head.addSpacer()
-  const when = head.addText((stale ? "offline · " : "") + clock(cached && stale ? cached.at : Date.now()))
-  when.font = Font.systemFont(9)
-  when.textColor = stale ? COLORS.todo : COLORS.dim
-  widget.addSpacer(6)
-
-  if (!tiles.length) { message(widget, "No tiles picked", "Open Set Orbit → Today → My Glance → Edit my box."); return widget }
-
-  if (small) grid(widget, tiles.slice(0, 4), 2, true)          // 2 x 2
-  else if (large) grid(widget, tiles, 2, false)                  // up to 2 x 3
-  else grid(widget, tiles, 3, true)                              // medium: up to 3 x 2
+  if (small) grid(widget, tiles.slice(0, 4), 2, { padV: 5, padH: 8, label: 10, value: 17, sub: 9 })
+  else if (large) grid(widget, tiles, 2, { padV: 12, padH: 12, label: 12, value: 26, sub: 11 })
+  else if (tiles.length <= 3) grid(widget, tiles, tiles.length, { padV: 12, padH: 10, label: 12, value: 24, sub: 11 })
+  else if (tiles.length === 4) grid(widget, tiles, 2, { padV: 5, padH: 12, label: 10, value: 17, sub: 9 })
+  else grid(widget, tiles, 3, { padV: 5, padH: 9, label: 10, value: 17, sub: 9 })
+  widget.addSpacer()
   return widget
 }
 
