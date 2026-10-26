@@ -1,4 +1,4 @@
-// Set Orbit — "My Glance" Home Screen widget for the free Scriptable app (iOS / iPadOS).  v155
+// Set Orbit — "My Glance" Home Screen widget for the free Scriptable app (iOS / iPadOS).  v156
 // Shows the tiles you picked in Set Orbit (Today tab → My Glance → "Edit my box"). Small, medium and large widgets.
 //
 // SETUP (3 steps — full instructions in Set Orbit → Settings → Home Screen widget):
@@ -102,12 +102,17 @@ function normalize(tile) {
   let state = tile.state || "info"
   if (value === "—") {
     state = "na"
-    if (id === "oura") sub = "Connect Oura"
+    const generic = !sub || sub === "no data yet" || sub === "readiness"
+    if (id.indexOf("oura") === 0) { if (generic) sub = "Connect Oura" }
     else if (id === "whoop") sub = "Connect WHOOP"
     else if (!sub || sub === "no data yet") sub = "No data"
   }
-  return { id: id, label: String(tile.label || "—"), value: value, sub: sub, state: state, path: tile.path }
+  const extra = Array.isArray(tile.extra) ? tile.extra.filter((e) => typeof e === "string" && e).map((e) => String(e)) : []
+  return { id: id, label: String(tile.label || "—"), value: value, sub: sub, state: state, path: tile.path, extra: extra }
 }
+
+// Shorter names for the narrow layouts (small widget and 3-across rows) so labels are not cut off.
+const SHORT = { "Oura overview": "Oura all", "Sleep score": "Sleep", "Sleep time": "Slept", "Deep sleep": "Deep", "REM sleep": "REM", "Resting HR": "Rest HR", "Body temp": "Temp", "Active cal": "Active" }
 
 // One line of text that stretches the card to the full width of its grid slot (works at iPhone and iPad widget sizes).
 function line(parent, str, font, color, opts) {
@@ -132,9 +137,13 @@ function tileCell(parent, raw, sz) {
   cell.setPadding(sz.padV, sz.padH, sz.padV, sz.padH)
   cell.spacing = 1
   cell.url = APP_URL + (tile.path && tile.path.charAt(0) === "/" ? tile.path : "/today")
-  line(cell, tile.label, Font.mediumSystemFont(sz.label), C.label)
+  const label = sz.short && SHORT[tile.label] ? SHORT[tile.label] : tile.label
+  const sub = sz.short && tile.value !== "—" && tile.extra.length ? tile.extra[0] : tile.sub
+  line(cell, label, Font.mediumSystemFont(sz.label), C.label)
   line(cell, tile.value, Font.boldSystemFont(sz.value), valueColor(tile.state), { scale: 0.5 })
-  line(cell, tile.sub || " ", Font.systemFont(sz.sub), C.faint)
+  line(cell, sub || " ", Font.systemFont(sz.sub), C.faint)
+  // Multi-value tiles (Oura overview) show their remaining values on large widgets, where there is room.
+  if (sz.more && tile.value !== "—" && tile.extra.length > 2) line(cell, tile.extra.slice(2, 4).join(" · "), Font.systemFont(sz.sub), C.faint)
   return cell
 }
 
@@ -226,9 +235,9 @@ function build(family, result, cached) {
   header(widget, small, cached && stale ? cached.at : Date.now(), stale)
   if (!tiles.length) { message(widget, "No tiles yet", "In Set Orbit open Today → My Glance → Edit my box."); return widget }
 
-  if (small) grid(widget, tiles.slice(0, 4), 2, { padV: 5, padH: 8, label: 10, value: 17, sub: 9 })
-  else if (large) grid(widget, tiles, 2, { padV: 12, padH: 12, label: 12, value: 26, sub: 11 })
-  else if (tiles.length <= 3) grid(widget, tiles, tiles.length, { padV: 12, padH: 10, label: 12, value: 24, sub: 11 })
+  if (small) grid(widget, tiles.slice(0, 4), 2, { padV: 5, padH: 8, label: 10, value: 17, sub: 9, short: true })
+  else if (large) grid(widget, tiles, 2, { padV: 12, padH: 12, label: 12, value: 26, sub: 11, more: true })
+  else if (tiles.length <= 3) grid(widget, tiles, tiles.length, { padV: 12, padH: 10, label: 12, value: 24, sub: 11, short: true })
   else if (tiles.length === 4) grid(widget, tiles, 2, { padV: 5, padH: 12, label: 10, value: 17, sub: 9 })
   else grid(widget, tiles, 3, { padV: 5, padH: 9, label: 10, value: 17, sub: 9 })
   widget.addSpacer()
